@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TLS & Cert Security Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            900: '#1a1c23',
+                            800: '#232630',
+                            card: '#2a2e39',
+                            DEFAULT: '#3b82f6',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background-color: #1a1c23;
+            color: #f3f4f6;
+        }
+        .card {
+            background-color: #2a2e39;
+            border: 1px solid #3f4455;
+        }
+        .status-badge {
+            transition: all 0.3s ease;
+        }
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="min-h-screen font-sans flex flex-col">
+
+    <header class="border-b border-gray-700 bg-brand-800 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img src="{{ url_for('static', filename='ico.jpg') }}" alt="" width="36" height="36" class="h-9 w-9 rounded-lg object-cover shrink-0 border border-gray-600">
+                <h1 class="text-xl font-semibold tracking-wide">TLS Risk <span class="text-blue-500">Analyzer</span></h1>
+            </div>
+            <div class="flex">
+                <form id="scan-form" class="flex relative items-center">
+                    <div class="relative">
+                        <i data-lucide="globe" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                        <input type="text" id="domain-input" placeholder="Ej. midominio.com" required
+                            class="bg-gray-800 border-gray-600 border text-white rounded-l-lg focus:ring-blue-500 focus:border-blue-500 block w-64 md:w-80 pl-10 p-2.5 outline-none transition-all">
+                    </div>
+                    <button type="submit" id="btn-scan" class="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-r-lg px-5 py-2.5 transition-colors flex items-center h-full border border-blue-600 hover:border-blue-700">
+                        <span id="btn-text">Escanear</span>
+                        <div id="btn-loader" class="spinner hidden"></div>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow p-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full mt-6 space-y-6 hidden" id="dashboard-content">
+        
+        <!-- Top Stats / Score -->
+        <section class="flex flex-col md:flex-row gap-6">
+            <div class="card p-6 rounded-xl flex items-center flex-1 shadow-lg">
+                <div class="rounded-full bg-blue-500/10 p-4 border border-blue-500/20 mr-4">
+                    <i data-lucide="activity" class="text-blue-400 w-8 h-8"></i>
+                </div>
+                <div>
+                   <p class="text-gray-400 text-sm font-medium">Postura TLS General</p>
+                   <h2 id="general-status" class="text-2xl font-bold text-white mt-1">-</h2> 
+                </div>
+            </div>
+            <div class="card p-6 rounded-xl flex items-center flex-1 shadow-lg">
+                <div class="rounded-full bg-green-500/10 p-4 border border-green-500/20 mr-4">
+                    <i data-lucide="award" class="text-green-400 w-8 h-8"></i>
+                </div>
+                <div>
+                   <p class="text-gray-400 text-sm font-medium">Puntaje / Calificación</p>
+                   <h2 class="text-2xl font-bold text-white mt-1"><span id="score-val">0</span> / 100 <span id="grade-val" class="text-xl ml-2 px-2 py-0.5 rounded bg-gray-700 text-gray-300">A</span></h2> 
+                </div>
+            </div>
+        </section>
+
+        <hr class="border-gray-700">
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+                <div class="card rounded-xl shadow-lg border-t-4 border-t-blue-500 transition-colors" id="cert-card">
+                    <div class="p-5 border-b border-gray-700 flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="file-badge-2" class="text-gray-400 w-5 h-5"></i>
+                            <h3 class="text-lg font-semibold">Estado del Certificado</h3>
+                        </div>
+                        <span id="cert-trust-badge" class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-700 text-gray-300">—</span>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <p class="text-gray-400 mb-1">Subject (Emisor)</p>
+                                <p class="font-medium truncate" id="cert-subject" title="-">-</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-400 mb-1">Issuer (Autoridad)</p>
+                                <p class="font-medium truncate" id="cert-issuer" title="-">-</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-400 mb-1">Algoritmo & Tamaño</p>
+                                <p class="font-medium" id="cert-key-info">-</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-400 mb-1">Válido hasta</p>
+                                <div class="flex items-center space-x-2">
+                                    <p class="font-medium" id="cert-days">-</p>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 mt-2" id="cert-warnings-container"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl shadow-lg">
+                    <div class="p-5 border-b border-gray-700 flex items-center space-x-2">
+                        <i data-lucide="network" class="text-gray-400 w-5 h-5"></i>
+                        <h3 class="text-lg font-semibold">Protocolos y Versiones</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="protocols-grid"></div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl shadow-lg" id="ciphers-card">
+                    <div class="p-5 border-b border-gray-700 flex items-center space-x-2">
+                        <i data-lucide="lock" class="text-gray-400 w-5 h-5"></i>
+                        <h3 class="text-lg font-semibold">Cipher Suites</h3>
+                        <span id="ciphers-iana-badge" class="ml-auto text-xs font-medium px-2 py-0.5 bg-gray-700 rounded-md text-gray-300"></span>
+                    </div>
+                    <div class="p-6 text-sm text-gray-300" id="ciphers-body">
+                        <p class="text-gray-500">Los datos aparecerán tras el escaneo.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="space-y-6">
+                <div class="card rounded-xl shadow-lg sticky top-6">
+                    <div class="p-5 border-b border-gray-700 flex items-center space-x-2">
+                        <i data-lucide="lightbulb" class="text-yellow-500 w-5 h-5"></i>
+                        <h3 class="text-lg font-semibold">Recomendaciones de Negocio</h3>
+                    </div>
+                    <div class="p-6 text-sm text-gray-300">
+                        <div id="risk-severity-wrap" class="mb-5 p-4 rounded-lg bg-gray-800 border-l-4 border-gray-600">
+                            <span class="text-xs uppercase text-gray-400 font-bold tracking-wider block mb-1">Nivel de Riesgo</span>
+                            <span id="risk-severity" class="font-bold text-lg text-white">Desconocido</span>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="font-semibold text-white mb-2 flex items-center"><i data-lucide="alert-triangle" class="w-4 h-4 text-red-400 mr-2"></i> Debilidades Encontradas</h4>
+                            <ul id="weaknesses-list" class="space-y-2 text-red-200/80 list-disc list-inside"></ul>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="font-semibold text-white mb-2 flex items-center"><i data-lucide="shield-plus" class="w-4 h-4 text-green-400 mr-2"></i> Fortalezas</h4>
+                            <ul id="strengths-list" class="space-y-2 text-green-200/80 list-disc list-inside"></ul>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="font-semibold text-white mb-2 flex items-center"><i data-lucide="list-ordered" class="w-4 h-4 text-orange-400 mr-2"></i> Hallazgos prioritarios</h4>
+                            <ul id="hallazgos-list" class="space-y-2 text-gray-300 list-decimal list-inside text-sm"></ul>
+                        </div>
+
+                        <div class="mt-6">
+                            <h4 class="font-semibold text-white mb-2 flex items-center"><i data-lucide="check-circle" class="w-4 h-4 text-blue-400 mr-2"></i> Plan de Acción</h4>
+                            <ul id="recommendations-list" class="space-y-3 font-medium"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="empty-state" class="flex-grow flex flex-col items-center justify-center p-6 text-center text-gray-400">
+        <div class="bg-brand-800 p-6 rounded-full border border-gray-700 mb-6 shadow-xl">
+            <i data-lucide="radar" class="w-16 h-16 text-blue-500 opacity-80"></i>
+        </div>
+        <h2 class="text-2xl font-semibold text-white mb-2">Seguridad a un clic de distancia</h2>
+        <p class="max-w-md mx-auto">Ingresa un dominio para ejecutar un análisis en tiempo real de los protocolos TLS y certificados de tu servicio corporativo.</p>
+    </div>
+
+    <div id="error-container" class="hidden p-4 mb-4 text-sm text-red-400 rounded-lg bg-red-900/30 border border-red-800 flex items-center max-w-7xl mx-auto w-full mt-6" role="alert">
+        <i data-lucide="alert-circle" class="w-5 h-5 mr-3"></i>
+        <span class="font-medium mr-2">Error de Análisis:</span> 
+        <span id="error-msg">Detalles del error</span>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const form = document.getElementById('scan-form');
+        const input = document.getElementById('domain-input');
+        const btnText = document.getElementById('btn-text');
+        const btnLoader = document.getElementById('btn-loader');
+        
+        const dashboard = document.getElementById('dashboard-content');
+        const emptyState = document.getElementById('empty-state');
+        const errorContainer = document.getElementById('error-container');
+        const errorMsg = document.getElementById('error-msg');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const domain = input.value.trim();
+            if(!domain) return;
+
+            btnText.textContent = "Analizando...";
+            btnLoader.classList.remove('hidden');
+            form.querySelector('button').disabled = true;
+            
+            errorContainer.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            dashboard.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ domain })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Ocurrió un error inesperado durante el escaneo.');
+                }
+
+                if (!data.scoring_y_recomendaciones) {
+                    throw new Error('Respuesta incompleta: falta scoring del backend.');
+                }
+
+                renderDashboard(data);
+                dashboard.classList.remove('hidden');
+
+                if (data.errors && data.errors.length > 0) {
+                    errorMsg.textContent = data.errors.join(' | ');
+                    errorContainer.classList.remove('hidden');
+                }
+
+            } catch (err) {
+                errorMsg.textContent = err.message;
+                errorContainer.classList.remove('hidden');
+                emptyState.classList.remove('hidden');
+            } finally {
+                btnText.textContent = "Escanear";
+                btnLoader.classList.add('hidden');
+                form.querySelector('button').disabled = false;
+                lucide.createIcons();
+            }
+        });
+
+        function estiloTono(tono) {
+            const t = (tono || 'gris').toLowerCase();
+            if (t === 'rojo') {
+                return {
+                    badge: 'bg-red-900 text-red-200 border border-red-700',
+                    icon: 'alert-triangle',
+                    shadow: 'shadow-[0_0_15px_rgba(239,68,68,0.3)]',
+                    borderCard: 'border-t-red-500',
+                };
+            }
+            if (t === 'amarillo') {
+                return {
+                    badge: 'bg-yellow-900/50 text-yellow-200 border border-yellow-700',
+                    icon: 'alert-circle',
+                    shadow: '',
+                    borderCard: 'border-t-yellow-500',
+                };
+            }
+            if (t === 'verde') {
+                return {
+                    badge: 'bg-green-900 text-green-200 border border-green-700',
+                    icon: 'check-circle',
+                    shadow: 'shadow-[0_0_15px_rgba(34,197,94,0.3)]',
+                    borderCard: 'border-t-green-500',
+                };
+            }
+            return {
+                badge: 'bg-gray-800 text-gray-500 border border-gray-700',
+                icon: 'minus-circle',
+                shadow: '',
+                borderCard: 'border-t-blue-500',
+            };
+        }
+
+        function clasesSeveridadBorde(severidad) {
+            const s = (severidad || '').toLowerCase();
+            if (s === 'baja') return 'border-green-500';
+            if (s === 'media') return 'border-yellow-500';
+            return 'border-red-500';
+        }
+
+        function renderDashboard(data) {
+            const res = data.resultados || {};
+            const scoring = data.scoring_y_recomendaciones || {};
+            const ui = scoring.ui || {};
+            const cert = res.certificado || {};
+            const ciphers = res.ciphers;
+
+            document.getElementById('general-status').textContent =
+                scoring.estado_postura || 'Evaluado';
+            document.getElementById('score-val').textContent = scoring.puntaje ?? '—';
+            const grade = scoring.calificacion_final || '—';
+            document.getElementById('grade-val').textContent = grade;
+
+            const gradeEl = document.getElementById('grade-val');
+            gradeEl.className = 'text-xl ml-2 px-2 py-0.5 rounded font-bold';
+            const tg = (ui.tono_calificacion || '').toLowerCase();
+            if (tg === 'rojo') gradeEl.classList.add('bg-red-900', 'text-red-300');
+            else if (tg === 'amarillo') gradeEl.classList.add('bg-yellow-900', 'text-yellow-300');
+            else gradeEl.classList.add('bg-green-900', 'text-green-300');
+
+            const pGrid = document.getElementById('protocols-grid');
+            pGrid.innerHTML = '';
+            const filasProto = ui.protocolos || [];
+            if (!filasProto.length) {
+                pGrid.innerHTML =
+                    '<p class="text-gray-500 col-span-full text-sm">No hay datos de protocolos en la respuesta.</p>';
+            } else {
+                filasProto.forEach((row) => {
+                    const st = estiloTono(row.tono);
+                    const iconHtml = `<i data-lucide="${st.icon}" class="w-4 h-4 mr-1.5 ${row.tono === 'gris' ? 'opacity-50' : ''}"></i>`;
+                    pGrid.innerHTML += `
+                    <div class="flex flex-col items-center justify-center p-4 bg-gray-800/80 rounded-lg border border-gray-700 ${st.shadow} transition-all">
+                        <span class="font-bold text-gray-300 mb-2 truncate max-w-full">${row.nombre}</span>
+                        <span class="flex items-center text-xs font-semibold px-2.5 py-1 rounded-full ${st.badge}">
+                            ${iconHtml}
+                            ${row.estado_texto}
+                        </span>
+                    </div>`;
+                });
+            }
+
+            const certUi = ui.certificado || {};
+            const stCert = estiloTono(certUi.tono);
+
+            document.getElementById('cert-subject').textContent = cert.subject != null ? cert.subject : '—';
+            document.getElementById('cert-subject').title = String(cert.subject || '');
+            document.getElementById('cert-issuer').textContent = cert.issuer != null ? cert.issuer : '—';
+            document.getElementById('cert-issuer').title = String(cert.issuer || '');
+
+            const ki = cert.key_info || {};
+            document.getElementById('cert-key-info').textContent =
+                cert.error ? '—' : `${ki.algorithm || '—'} - ${ki.size != null ? ki.size : '—'} bits`;
+
+            if (cert.error) {
+                document.getElementById('cert-days').innerHTML =
+                    '<span class="text-gray-500">No disponible</span>';
+            } else {
+                const daysText = cert.is_expired
+                    ? `Expiró hace ${Math.abs(cert.days_to_expire)} días`
+                    : `Faltan ${cert.days_to_expire} días`;
+                document.getElementById('cert-days').innerHTML = `<span class="${cert.is_expired ? 'text-red-400 font-bold' : ''}">${daysText}</span>`;
+            }
+
+            const certCard = document.getElementById('cert-card');
+            const certBadge = document.getElementById('cert-trust-badge');
+            const warningsContainer = document.getElementById('cert-warnings-container');
+            warningsContainer.innerHTML = '';
+
+            certCard.classList.remove('border-t-blue-500', 'border-t-red-500', 'border-t-green-500', 'border-t-yellow-500');
+            certCard.classList.add(stCert.borderCard);
+
+            certBadge.className = 'px-3 py-1 text-xs font-semibold rounded-full ' + stCert.badge;
+            certBadge.textContent = certUi.badge_etiqueta || 'Evaluando…';
+
+            const alertas = certUi.alertas || [];
+            if (alertas.length > 0) {
+                let wHtml = `<div class="mt-3 p-3 bg-red-900/20 border-l-4 border-red-500 rounded-r text-sm">
+                    <p class="font-bold text-red-400 mb-1 flex items-center"><i data-lucide="alert-octagon" class="w-4 h-4 mr-1"></i> Alertas en Certificado</p><ul class="list-disc list-inside text-gray-300">`;
+                alertas.forEach((w) => (wHtml += `<li>${w}</li>`));
+                wHtml += `</ul></div>`;
+                warningsContainer.innerHTML = wHtml;
+            }
+
+            const ciphersMeta = ui.ciphers || {};
+            const nCount = ciphersMeta.suites_con_recomendacion_n ?? 0;
+            const ianaBadge = document.getElementById('ciphers-iana-badge');
+            const ciphersBody = document.getElementById('ciphers-body');
+            if (ciphers && typeof ciphers === 'object' && ciphers.error) {
+                ianaBadge.textContent = 'Error';
+                ianaBadge.className =
+                    'ml-auto text-xs font-medium px-2 py-0.5 bg-red-900/40 rounded-md text-red-200';
+                ciphersBody.innerHTML = `<p class="text-red-300">${ciphers.error}</p>`;
+            } else if (ciphers && typeof ciphers === 'object') {
+                ianaBadge.textContent = `IANA 'N': ${nCount}`;
+                ianaBadge.className =
+                    'ml-auto text-xs font-medium px-2 py-0.5 bg-gray-700 rounded-md text-gray-300';
+                const vers = Object.keys(ciphers).filter((k) => Array.isArray(ciphers[k]));
+                let html = `<p class="mb-3 text-gray-400">Versiones detectadas: <span class="text-white font-medium">${vers.length ? vers.join(', ') : '—'}</span></p>`;
+                html += '<div class="max-h-48 overflow-y-auto space-y-2 text-xs">';
+                vers.forEach((v) => {
+                    const list = ciphers[v].slice(0, 12);
+                    html += `<p class="text-gray-500 font-semibold">${v}</p><ul class="list-disc list-inside text-gray-400 mb-2">`;
+                    list.forEach((c) => {
+                        const rec = (c.iana_recommendation || '').toString();
+                        const mark =
+                            rec === 'N'
+                                ? 'text-red-300'
+                                : rec === 'Y'
+                                  ? 'text-green-300'
+                                  : 'text-yellow-200/80';
+                        html += `<li class="${mark}">${c.cipher} <span class="text-gray-500">[${rec}]</span></li>`;
+                    });
+                    if (ciphers[v].length > 12) {
+                        html += `<li class="text-gray-500">… y ${ciphers[v].length - 12} más</li>`;
+                    }
+                    html += '</ul>';
+                });
+                html += '</div>';
+                ciphersBody.innerHTML = html;
+            } else {
+                ianaBadge.textContent = '';
+                ciphersBody.innerHTML = '<p class="text-gray-500">Sin datos de ciphers.</p>';
+            }
+
+            const sevWrap = document.getElementById('risk-severity-wrap');
+            const sevText = document.getElementById('risk-severity');
+            sevText.textContent = scoring.severidad_general || 'Media';
+            sevWrap.className =
+                'mb-5 p-4 rounded-lg bg-gray-800 border-l-4 transition-colors ' +
+                clasesSeveridadBorde(scoring.severidad_general);
+
+            const wList = document.getElementById('weaknesses-list');
+            wList.innerHTML = '';
+            const deb = scoring.debilidades || [];
+            if (deb.length) {
+                deb.forEach((w) => (wList.innerHTML += `<li>${w}</li>`));
+            } else {
+                wList.innerHTML = `<li class="text-gray-500">Sin debilidades detectadas</li>`;
+            }
+
+            const sList = document.getElementById('strengths-list');
+            sList.innerHTML = '';
+            const fort = scoring.fortalezas || [];
+            if (fort.length) {
+                fort.forEach((s) => (sList.innerHTML += `<li>${s}</li>`));
+            } else {
+                sList.innerHTML = `<li class="text-gray-500">Ninguna detectada</li>`;
+            }
+
+            const hList = document.getElementById('hallazgos-list');
+            hList.innerHTML = '';
+            const hall = scoring.hallazgos_prioritarios || [];
+            if (hall.length) {
+                hall.forEach((h) => {
+                    hList.innerHTML += `<li><span class="text-gray-500">[${h.severidad}]</span> ${h.descripcion}</li>`;
+                });
+            } else {
+                hList.innerHTML = `<li class="text-gray-500">Sin hallazgos registrados</li>`;
+            }
+
+            const rList = document.getElementById('recommendations-list');
+            rList.innerHTML = '';
+            const recs = scoring.recomendaciones || [];
+            if (recs.length) {
+                recs.forEach((r) => {
+                    rList.innerHTML += `<li class="p-3 bg-blue-900/10 border border-blue-900/50 rounded text-blue-100 flex items-start"><i data-lucide="arrow-right-circle" class="w-4 h-4 text-blue-500 mt-0.5 mr-2 flex-shrink-0"></i> <span>${r}</span></li>`;
+                });
+            } else {
+                rList.innerHTML = `<li class="text-gray-500">Sin acciones pendientes</li>`;
+            }
+
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+{
+    "target": "inforcol.com",
+    "fecha_escaneo": "2026-03-28 15:48:47",
+    "resultados": {
+        "protocolos": {
+            "SSLv2": "HABILITADO",
+            "SSLv3": "HABILITADO",
+            "TLSv1.0": "DESHABILITADO",
+            "TLSv1.1": "DESHABILITADO",
+            "TLSv1.2": "HABILITADO",
+            "TLSv1.3": "DESHABILITADO"
+        },
+        "certificado": {
+            "subject": "inforcol.com",
+            "issuer": "R13",
+            "is_expired": false,
+            "days_to_expire": 49,
+            "key_info": {
+                "algorithm": "RSA",
+                "size": 2048,
+                "is_weak": false
+            },
+            "signature_algorithm": "sha256WithRSAEncryption",
+            "is_self_signed": false,
+            "trust_chain": "Valid"
+        },
+        "ciphers": {
+            "TLSv1.2": [
+                {
+                    "cipher": "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                    "iana_recommendation": "Y"
+                },
+                {
+                    "cipher": "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                    "iana_recommendation": "Y"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+                    "iana_recommendation": "N"
+                },
+                {
+                    "cipher": "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+                    "iana_recommendation": "N"
+                },
+                {
+                    "cipher": "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+                    "iana_recommendation": "N"
+                },
+                {
+                    "cipher": "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+                    "iana_recommendation": "N"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_AES_256_GCM_SHA384",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_AES_128_GCM_SHA256",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_AES_256_CBC_SHA256",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_AES_128_CBC_SHA256",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_AES_256_CBC_SHA",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_AES_128_CBC_SHA",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+                    "iana_recommendation": "Y"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_AES_256_CCM_8",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_AES_256_CCM",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_ECDHE_RSA_WITH_ARIA_256_GCM_SHA384",
+                    "iana_recommendation": "N"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_ARIA_256_GCM_SHA384",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_AES_128_CCM_8",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_AES_128_CCM",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_ECDHE_RSA_WITH_ARIA_128_GCM_SHA256",
+                    "iana_recommendation": "N"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_ARIA_128_GCM_SHA256",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384",
+                    "iana_recommendation": "N"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256",
+                    "iana_recommendation": "N"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_AES_256_CCM_8",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_AES_256_CCM",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_ARIA_256_GCM_SHA384",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_AES_128_CCM_8",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_AES_128_CCM",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_ARIA_128_GCM_SHA256",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_CAMELLIA_256_CBC_SHA",
+                    "iana_recommendation": "D"
+                },
+                {
+                    "cipher": "TLS_RSA_WITH_CAMELLIA_128_CBC_SHA",
+                    "iana_recommendation": "D"
+                }
+            ]
+        },
+        "vulnerabilidades_y_config": {
+            "vulnerabilidades": {
+                "heartbleed": false,
+                "poodle": false,
+                "robot": false
+            },
+            "configuracion_seguridad": {
+                "hsts_activo": true,
+                "hsts_valor": "max-age=31536000; includeSubDomains; preload"
+            }
+        }
+    }
+}
